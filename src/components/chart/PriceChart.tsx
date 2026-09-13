@@ -16,7 +16,7 @@ import { fetchKlines } from "@/lib/binance/rest";
 import { getBinanceWS } from "@/lib/binance/ws";
 import { fetchHistoricalCandles } from "@/lib/data912/client";
 import { ema, rsi, macd } from "@/lib/indicators";
-import { calculateVWAPVolumeProfile } from "@/lib/indicators/vwap-volume-profile";
+import { VWAPVolumeProfile } from "@/lib/indicators/vwap-volume-profile";
 import type { Candle, Timeframe } from "@/lib/binance/types";
 import {
   INDICATOR_COLORS,
@@ -490,12 +490,21 @@ export function PriceChart({ symbol, timeframe }: Props) {
     const bars = candlesRef.current;
     if (!chart || !series || !vwapSeries || !canvas) return;
 
-    const result = calculateVWAPVolumeProfile(bars, {
+    const indicator = new VWAPVolumeProfile({
       period: config.vwapProfilePeriod,
       offset: config.vwapProfileOffset,
       bins: config.vwapProfileBins,
       pocType: config.vwapProfilePocType,
+      chartBackgroundColor: "#131722",
     });
+    const result = indicator.calculate(bars.map((bar) => ({
+      time: bar.time,
+      open: bar.open,
+      high: bar.high,
+      low: bar.low,
+      close: bar.close,
+      volume: bar.volume,
+    })));
     const vwapData = result.vwap.flatMap((value, index) =>
       value == null || !bars[index] ? [] : [{ time: bars[index].time as UTCTimestamp, value }],
     );
