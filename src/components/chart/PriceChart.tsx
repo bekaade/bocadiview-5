@@ -16,6 +16,8 @@ import { fetchKlines } from "@/lib/binance/rest";
 import { getBinanceWS } from "@/lib/binance/ws";
 import { fetchHistoricalCandles } from "@/lib/data912/client";
 import { ema, rsi, macd } from "@/lib/indicators";
+import { useVwapVolumeProfile } from "@/lib/indicators/useVwapVolumeProfile";
+import { applyVwapCandleColors } from "@/lib/indicators/applyVwapCandleColors";
 import type { Candle, Timeframe } from "@/lib/binance/types";
 import {
   INDICATOR_COLORS,
@@ -136,6 +138,13 @@ export function PriceChart({ symbol, timeframe }: Props) {
   const [paneOffsets, setPaneOffsets] = useState<PaneOffset[]>([]);
   const [measure, setMeasure] = useState<MeasureState>(INITIAL_MEASURE);
   const [renderTick, setRenderTick] = useState(0);
+  const vwapBars = [...candlesRef.current];
+  useVwapVolumeProfile({
+    series: candleSeriesRef.current,
+    bars: vwapBars,
+    inputs: { period: config.vwapProfilePeriod ?? 250, offset: config.vwapProfileOffset ?? 10, bins: config.vwapProfileBins ?? 50, pocType: config.vwapProfilePocType ?? "+/-VWAP" },
+    enabled: Boolean(indicators.vwapProfile),
+  });
   const measureRef = useRef(measure);
   measureRef.current = measure;
 
