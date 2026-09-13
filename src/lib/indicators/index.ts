@@ -19,52 +19,33 @@ export interface VwapProfileBin {
   totalVolume: number;
 }
 
-/** VWAP Volume Profile [BigBeluga], matching Pine's session VWAP and signed profile volume. */
+/** VWAP Volume Profile [BigBeluga] approximation for the visible period. */
 export function vwapVolumeProfile(
   candles: Candle[],
   period = 250,
   bins = 50,
 ): { vwap: IndicatorPoint[]; profile: VwapProfileBin[]; high: number; low: number } {
   const source = candles.slice(-Math.min(period, candles.length));
-  if (!source.length || bins < 1) return { vwap: [], profile: [], high: 0, low: 0 };
+  if (!source.length) return { vwap: [], profile: [], high: 0, low: 0 };
 
-  const vwap: IndicatorPoint[] = [];
-  const signedVolumes: number[] = [];
-  let session = "";
-  let volumeSum = 0;
-  let priceVolumeSum = 0;
-  for (let index = 0; index < source.length; index += 1) {
-    const candle = source[index];
-    const day = new Date(candle.time * 1000).toISOString().slice(0, 10);
-    if (day !== session) {
-      session = day;
-      volumeSum = 0;
-      priceVolumeSum = 0;
-    }
-    const price = candle.close;
-    const volume = Number.isFinite(candle.volume) ? candle.volume : 0;
-    volumeSum += volume;
-    priceVolumeSum += price * volume;
-    const value = volumeSum > 0 ? priceVolumeSum / volumeSum : price;
-    vwap.push({ time: candle.time, value });
-    const previous = vwap[index - 2]?.value;
-    signedVolumes.push(previous !== undefined && value > previous ? volume : -volume);
-  }
-
+  let cumulativeVolume = 0;
+  let cumulativePriceVolume = 0;
+  const vwap = source.map((candle) => {
+    const typical = (candle.high + candle.low + candle.close) / 3;
+    cumulativeVolume += candle.volume;
+    cumulativePriceVolume += typical * candle.volume;
+    return { time: candle.time, value: cumulativeVolume ? cumulativePriceVolume / cumulativeVolume : typical };
+  });
   const high = Math.max(...source.map((candle) => candle.high));
   const low = Math.min(...source.map((candle) => candle.low));
   const step = (high - low || 1) / bins;
-  const profile = Array.from({ length: bins }, (_, index) => ({
-    low: low + index * step,
-    high: low + (index + 1) * step,
-    signedVolume: 0,
-    totalVolume: 0,
-  }));
+  const profile = Array.from({ length: bins }, (_, index) => ({ low: low + index * step, high: low + (index + 1) * step, signedVolume: 0, totalVolume: 0 }));
   for (let index = 0; index < source.length; index += 1) {
-    const value = vwap[index].value;
-    const binIndex = Math.max(0, Math.min(bins - 1, Math.floor(((value - low) / (high - low || 1)) * bins)));
-    profile[binIndex].signedVolume += signedVolumes[index];
-    profile[binIndex].totalVolume += source[index].volume;
+    const candle = source[index];
+    const value = vwap[index].value > (vwap[index - 2]?.value ?? vwap[index].value) ? candle.volume : -candle.volume;
+    const binIndex = Math.max(0, Math.min(bins - 1, Math.floor(((vwap[index].value - low) / (high - low || 1)) * bins)));
+    profile[binIndex].signedVolume += value;
+    profile[binIndex].totalVolume += candle.volume;
   }
   return { vwap, profile, high, low };
 }

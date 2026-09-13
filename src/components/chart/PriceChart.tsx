@@ -352,14 +352,14 @@ export function PriceChart({ symbol, timeframe }: Props) {
     if (!context) return;
     const rect = canvas.getBoundingClientRect();
     const ratio = window.devicePixelRatio || 1;
-    canvas.width = Math.max(1, Math.floor(rect.width * ratio));
-    canvas.height = Math.max(1, Math.floor(rect.height * ratio));
-    context.setTransform(ratio, 0, 0, ratio, 0, 0);
+    canvas.width = rect.width * ratio;
+    canvas.height = rect.height * ratio;
+    context.scale(ratio, ratio);
     context.clearRect(0, 0, rect.width, rect.height);
     if (!indicators.vwapProfile || hidden.vwapProfile || !result.profile.length) return;
     const maxAbs = Math.max(...result.profile.map((bin) => Math.abs(bin.signedVolume)), 1);
-    const x = Math.max(0, rect.width - 154);
-    const width = 140;
+    const x = Math.max(0, rect.width - 150);
+    const width = 132;
     for (const bin of result.profile) {
       const top = chartRef.current.panes()[0]?.getHeight() ? candleSeriesRef.current?.priceToCoordinate(bin.high) : null;
       const bottom = candleSeriesRef.current?.priceToCoordinate(bin.low);
