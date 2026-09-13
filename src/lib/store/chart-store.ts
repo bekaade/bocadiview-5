@@ -10,7 +10,8 @@ export type IndicatorKey =
   | "ema200"
   | "rsi"
   | "macd"
-  | "volume";
+  | "volume"
+  | "vwapProfile";
 
 export type DrawingTool = "cursor" | "hline" | "measure" | "eraser";
 
@@ -31,6 +32,8 @@ export interface IndicatorConfig {
   macdFast: number;
   macdSlow: number;
   macdSignal: number;
+  vwapProfilePeriod: number;
+  vwapProfileBins: number;
 }
 
 export const DEFAULT_CONFIG: IndicatorConfig = {
@@ -41,6 +44,8 @@ export const DEFAULT_CONFIG: IndicatorConfig = {
   macdFast: 12,
   macdSlow: 26,
   macdSignal: 9,
+  vwapProfilePeriod: 250,
+  vwapProfileBins: 50,
 };
 
 export const INDICATOR_COLORS: Record<IndicatorKey, string> = {
@@ -50,6 +55,7 @@ export const INDICATOR_COLORS: Record<IndicatorKey, string> = {
   rsi: "#ab47bc",
   macd: "#2962ff",
   volume: "#787b86",
+  vwapProfile: "#42bda8",
 };
 
 export const DEFAULT_WATCHLIST = [
@@ -116,6 +122,7 @@ export const useChartStore = create<ChartState>()(
         rsi: true,
         macd: false,
         volume: true,
+        vwapProfile: false,
       },
       hidden: {
         ema20: false,
@@ -124,6 +131,7 @@ export const useChartStore = create<ChartState>()(
         rsi: false,
         macd: false,
         volume: false,
+        vwapProfile: false,
       },
       config: { ...DEFAULT_CONFIG },
       watchlist: DEFAULT_WATCHLIST,
