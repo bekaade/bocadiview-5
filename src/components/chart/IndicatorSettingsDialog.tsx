@@ -22,7 +22,6 @@ const TITLES: Record<IndicatorKey, string> = {
   rsi: "RSI",
   macd: "MACD",
   volume: "Volumen",
-  vwapProfile: "VWAP Volume Profile [BigBeluga]",
 };
 
 export function IndicatorSettingsDialog() {
