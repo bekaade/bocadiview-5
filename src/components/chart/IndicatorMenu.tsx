@@ -22,8 +22,6 @@ interface Entry {
     macdFast: number;
     macdSlow: number;
     macdSignal: number;
-    vwapProfilePeriod: number;
-    vwapProfileBins: number;
   }) => string;
   group: string;
 }
@@ -33,7 +31,6 @@ const ENTRIES: Entry[] = [
   { key: "ema50", group: "Medias móviles", label: (c) => `EMA ${c.ema50}` },
   { key: "ema200", group: "Medias móviles", label: (c) => `EMA ${c.ema200}` },
   { key: "volume", group: "Volumen", label: () => "Volumen" },
-  { key: "vwapProfile", group: "Volumen", label: (c) => `VWAP Volume Profile (${c.vwapProfilePeriod}, ${c.vwapProfileBins})` },
   { key: "rsi", group: "Osciladores", label: (c) => `RSI (${c.rsi})` },
   {
     key: "macd",

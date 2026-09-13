@@ -16,7 +16,6 @@ import { fetchKlines } from "@/lib/binance/rest";
 import { getBinanceWS } from "@/lib/binance/ws";
 import { fetchHistoricalCandles } from "@/lib/data912/client";
 import { ema, rsi, macd } from "@/lib/indicators";
-import { calculateVWAPVolumeProfile } from "@/lib/indicators/vwap-volume-profile";
 import type { Candle, Timeframe } from "@/lib/binance/types";
 import {
   INDICATOR_COLORS,
@@ -101,8 +100,6 @@ export function PriceChart({ symbol, timeframe }: Props) {
   const ema20Ref = useRef<ISeriesApi<"Line"> | null>(null);
   const ema50Ref = useRef<ISeriesApi<"Line"> | null>(null);
   const ema200Ref = useRef<ISeriesApi<"Line"> | null>(null);
-  const vwapRef = useRef<ISeriesApi<"Line"> | null>(null);
-  const vwapCanvasRef = useRef<HTMLCanvasElement>(null);
   const rsiRef = useRef<ISeriesApi<"Line"> | null>(null);
   const rsi30Ref = useRef<ISeriesApi<"Line"> | null>(null);
   const rsi70Ref = useRef<ISeriesApi<"Line"> | null>(null);
@@ -221,12 +218,6 @@ export function PriceChart({ symbol, timeframe }: Props) {
       priceLineVisible: false,
       lastValueVisible: false,
     });
-    vwapRef.current = chart.addSeries(LineSeries, {
-      color: INDICATOR_COLORS.vwapProfile,
-      lineWidth: 2,
-      priceLineVisible: false,
-      lastValueVisible: false,
-    });
 
     chartRef.current = chart;
 
@@ -333,7 +324,6 @@ export function PriceChart({ symbol, timeframe }: Props) {
       ema20Ref.current = null;
       ema50Ref.current = null;
       ema200Ref.current = null;
-      vwapRef.current = null;
       rsiRef.current = null;
       rsi30Ref.current = null;
       rsi70Ref.current = null;
@@ -480,75 +470,12 @@ export function PriceChart({ symbol, timeframe }: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [indicators.macd, indicators.rsi]);
 
-  // VWAP Volume Profile — uses the converted Pine calculation and maps its
-  // drawing primitives into the chart's logical and price coordinates.
-  useEffect(() => {
-    const chart = chartRef.current;
-    const series = candleSeriesRef.current;
-    const vwapSeries = vwapRef.current;
-    const canvas = vwapCanvasRef.current;
-    const bars = candlesRef.current;
-    if (!chart || !series || !vwapSeries || !canvas) return;
-
-    const result = calculateVWAPVolumeProfile(bars, {
-      period: config.vwapProfilePeriod,
-      offset: config.vwapProfileOffset,
-      bins: config.vwapProfileBins,
-      pocType: config.vwapProfilePocType,
-    });
-    const vwapData = result.vwap.flatMap((value, index) =>
-      value == null || !bars[index] ? [] : [{ time: bars[index].time as UTCTimestamp, value }],
-    );
-    vwapSeries.setData(vwapData);
-
-    const draw = () => {
-      const context = canvas.getContext("2d");
-      const rect = canvas.getBoundingClientRect();
-      if (!context || rect.width === 0 || rect.height === 0) return;
-      const ratio = window.devicePixelRatio || 1;
-      canvas.width = Math.max(1, Math.floor(rect.width * ratio));
-      canvas.height = Math.max(1, Math.floor(rect.height * ratio));
-      context.setTransform(ratio, 0, 0, ratio, 0, 0);
-      context.clearRect(0, 0, rect.width, rect.height);
-      if (!indicators.vwapProfile || hidden.vwapProfile || !result.profile) return;
-
-      const profile = result.profile;
-      const toX = (logical: number) => chart.timeScale().logicalToCoordinate(logical as never);
-      const toY = (price: number) => series.priceToCoordinate(price);
-      const drawBox = (box: { left: number; right: number; top: number; bottom: number; backgroundColor: string; borderColor: string | null; text?: string; textColor?: string }) => {
-        const left = toX(box.left);
-        const right = toX(box.right);
-        const top = toY(box.top);
-        const bottom = toY(box.bottom);
-        if ([left, right, top, bottom].some((value) => value == null)) return;
-        const x = Math.min(left!, right!);
-        const y = Math.min(top!, bottom!);
-        const width = Math.max(1, Math.abs(right! - left!));
-        const height = Math.max(1, Math.abs(bottom! - top!));
-        context.fillStyle = box.backgroundColor;
-        context.fillRect(x, y, width, height);
-        if (box.borderColor) { context.strokeStyle = box.borderColor; context.strokeRect(x, y, width, height); }
-        if (box.text) { context.fillStyle = box.textColor ?? "#fff"; context.font = "11px sans-serif"; context.fillText(box.text, x + 4, y + 14); }
-      };
-      drawBox(profile.backgroundBox);
-      profile.boxes.forEach(drawBox);
-      if (profile.positivePOC) drawBox(profile.positivePOC);
-      if (profile.negativePOC) drawBox(profile.negativePOC);
-    };
-    draw();
-    chart.timeScale().subscribeVisibleLogicalRangeChange(draw);
-    const resize = new ResizeObserver(draw);
-    resize.observe(canvas);
-    return () => { chart.timeScale().unsubscribeVisibleLogicalRangeChange(draw); resize.disconnect(); };
-  }, [config.vwapProfilePeriod, config.vwapProfileOffset, config.vwapProfileBins, config.vwapProfilePocType, indicators.vwapProfile, hidden.vwapProfile, renderTick]);
-
   // Visibility — eye toggle (hidden state) + enabled state combined
   useEffect(() => {
     const v = (key: IndicatorKey) => indicators[key] && !hidden[key];
     ema20Ref.current?.applyOptions({ visible: v("ema20") });
     ema50Ref.current?.applyOptions({ visible: v("ema50") });
     ema200Ref.current?.applyOptions({ visible: v("ema200") });
-    vwapRef.current?.applyOptions({ visible: v("vwapProfile") });
     if (rsiRef.current) rsiRef.current.applyOptions({ visible: v("rsi") });
     if (rsi30Ref.current) rsi30Ref.current.applyOptions({ visible: v("rsi") });
     if (rsi70Ref.current) rsi70Ref.current.applyOptions({ visible: v("rsi") });
@@ -869,7 +796,6 @@ export function PriceChart({ symbol, timeframe }: Props) {
   return (
     <div className="relative h-full w-full">
       <div ref={containerRef} className="h-full w-full" />
-      <canvas ref={vwapCanvasRef} className="pointer-events-none absolute inset-0 z-[5] h-full w-full" aria-hidden="true" />
       {measureRender}
 
       {/* Top-left of main pane: symbol info + OHLC + Volume pill + EMA pills */}
@@ -961,16 +887,6 @@ export function PriceChart({ symbol, timeframe }: Props) {
               onToggleHide={() => toggleHidden("ema200")}
               onSettings={() => setSettingsTarget("ema200")}
               onRemove={() => removeIndicator("ema200")}
-            />
-          )}
-          {indicators.vwapProfile && (
-            <IndicatorPill
-              name="VWAP Profile"
-              color={INDICATOR_COLORS.vwapProfile}
-              hidden={hidden.vwapProfile}
-              onToggleHide={() => toggleHidden("vwapProfile")}
-              onSettings={() => setSettingsTarget("vwapProfile")}
-              onRemove={() => removeIndicator("vwapProfile")}
             />
           )}
           {indicators.volume && (

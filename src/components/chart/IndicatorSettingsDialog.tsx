@@ -22,7 +22,6 @@ const TITLES: Record<IndicatorKey, string> = {
   rsi: "RSI",
   macd: "MACD",
   volume: "Volumen",
-  vwapProfile: "VWAP Volume Profile [BigBeluga]",
 };
 
 export function IndicatorSettingsDialog() {
@@ -82,10 +81,6 @@ function SettingsForm({ target, config, onSave, onReset }: FormProps) {
     macdFast: config.macdFast,
     macdSlow: config.macdSlow,
     macdSignal: config.macdSignal,
-    vwapProfilePeriod: config.vwapProfilePeriod,
-    vwapProfileOffset: config.vwapProfileOffset,
-    vwapProfileBins: config.vwapProfileBins,
-    vwapProfilePocType: config.vwapProfilePocType,
   });
 
   useEffect(() => {
@@ -97,10 +92,6 @@ function SettingsForm({ target, config, onSave, onReset }: FormProps) {
       macdFast: config.macdFast,
       macdSlow: config.macdSlow,
       macdSignal: config.macdSignal,
-      vwapProfilePeriod: config.vwapProfilePeriod,
-      vwapProfileOffset: config.vwapProfileOffset,
-      vwapProfileBins: config.vwapProfileBins,
-      vwapProfilePocType: config.vwapProfilePocType,
     });
   }, [config, target]);
 
@@ -114,13 +105,6 @@ function SettingsForm({ target, config, onSave, onReset }: FormProps) {
         macdFast: clamp(draft.macdFast, 2, 100),
         macdSlow: clamp(draft.macdSlow, 2, 200),
         macdSignal: clamp(draft.macdSignal, 2, 100),
-      });
-    else if (target === "vwapProfile")
-      onSave({
-        vwapProfilePeriod: clamp(draft.vwapProfilePeriod, 1, 500),
-        vwapProfileOffset: Math.trunc(draft.vwapProfileOffset),
-        vwapProfileBins: clamp(draft.vwapProfileBins, 1, 500),
-        vwapProfilePocType: draft.vwapProfilePocType,
       });
     else if (target === "volume") onSave({});
   }
@@ -158,21 +142,6 @@ function SettingsForm({ target, config, onSave, onReset }: FormProps) {
             value={draft.macdSignal}
             onChange={(n) => setDraft((d) => ({ ...d, macdSignal: n }))}
           />
-        </div>
-      )}
-      {target === "vwapProfile" && (
-        <div className="flex flex-col gap-3">
-          <div className="grid grid-cols-3 gap-2">
-            <Field label="Período" value={draft.vwapProfilePeriod} onChange={(n) => setDraft((d) => ({ ...d, vwapProfilePeriod: n }))} />
-            <Field label="Offset" value={draft.vwapProfileOffset} onChange={(n) => setDraft((d) => ({ ...d, vwapProfileOffset: n }))} />
-            <Field label="Bins" value={draft.vwapProfileBins} onChange={(n) => setDraft((d) => ({ ...d, vwapProfileBins: n }))} />
-          </div>
-          <label className="flex flex-col gap-1">
-            <span className="text-[10px] font-semibold uppercase tracking-wider text-tv-text-muted">POC</span>
-            <select value={draft.vwapProfilePocType} onChange={(e) => setDraft((d) => ({ ...d, vwapProfilePocType: e.target.value as typeof d.vwapProfilePocType }))} className="rounded border border-tv-border bg-tv-bg px-2 py-2 text-xs text-tv-text">
-              <option value="+VWAP">+VWAP</option><option value="-VWAP">-VWAP</option><option value="+/-VWAP">+/-VWAP</option>
-            </select>
-          </label>
         </div>
       )}
       {target === "volume" && (
