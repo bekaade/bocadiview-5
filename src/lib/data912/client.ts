@@ -19,15 +19,18 @@ export async function fetchLivePanel(
 /** Trae el histórico diario de un ticker y lo devuelve ya en formato de velas */
 export async function fetchHistoricalCandles(
   type: Data912HistoricalType,
-  ticker: string
+  ticker: string,
+  timeframe = "1d"
 ): Promise<Candle[]> {
-  const res = await fetch(`/api/data912/historical/${type}/${ticker}`);
+  const res = await fetch(
+    `/api/data912/historical/${type}/${ticker}?interval=${encodeURIComponent(timeframe)}`,
+  );
   if (!res.ok) throw new Error(`No se pudo obtener histórico de ${ticker}`);
   const bars: Data912HistoricalBar[] = await res.json();
 
   return bars
     .map((bar) => ({
-      time: Math.floor(new Date(`${bar.date}T00:00:00Z`).getTime() / 1000),
+      time: Math.floor(new Date(bar.date.includes("T") ? bar.date : `${bar.date}T00:00:00Z`).getTime() / 1000),
       open: bar.o,
       high: bar.h,
       low: bar.l,
