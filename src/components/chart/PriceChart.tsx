@@ -635,7 +635,7 @@ export function PriceChart({ symbol, timeframe }: Props) {
       try {
         const klines =
           assetClass === "cedear"
-            ? await fetchHistoricalCandles("cedears", symbol)
+            ? await fetchHistoricalCandles("cedears", symbol, timeframe)
             : await fetchKlines(symbol, timeframe, 1000);
         if (cancelled) return;
         candlesRef.current = klines;
