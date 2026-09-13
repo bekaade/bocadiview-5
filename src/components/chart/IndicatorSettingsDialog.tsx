@@ -22,7 +22,6 @@ const TITLES: Record<IndicatorKey, string> = {
   rsi: "RSI",
   macd: "MACD",
   volume: "Volumen",
-  vwapProfile: "VWAP Volume Profile",
 };
 
 export function IndicatorSettingsDialog() {
@@ -82,8 +81,6 @@ function SettingsForm({ target, config, onSave, onReset }: FormProps) {
     macdFast: config.macdFast,
     macdSlow: config.macdSlow,
     macdSignal: config.macdSignal,
-    vwapProfilePeriod: config.vwapProfilePeriod,
-    vwapProfileBins: config.vwapProfileBins,
   });
 
   useEffect(() => {
@@ -95,8 +92,6 @@ function SettingsForm({ target, config, onSave, onReset }: FormProps) {
       macdFast: config.macdFast,
       macdSlow: config.macdSlow,
       macdSignal: config.macdSignal,
-      vwapProfilePeriod: config.vwapProfilePeriod,
-      vwapProfileBins: config.vwapProfileBins,
     });
   }, [config, target]);
 
@@ -110,11 +105,6 @@ function SettingsForm({ target, config, onSave, onReset }: FormProps) {
         macdFast: clamp(draft.macdFast, 2, 100),
         macdSlow: clamp(draft.macdSlow, 2, 200),
         macdSignal: clamp(draft.macdSignal, 2, 100),
-      });
-    else if (target === "vwapProfile")
-      onSave({
-        vwapProfilePeriod: clamp(draft.vwapProfilePeriod, 20, 500),
-        vwapProfileBins: clamp(draft.vwapProfileBins, 10, 100),
       });
     else if (target === "volume") onSave({});
   }
@@ -152,12 +142,6 @@ function SettingsForm({ target, config, onSave, onReset }: FormProps) {
             value={draft.macdSignal}
             onChange={(n) => setDraft((d) => ({ ...d, macdSignal: n }))}
           />
-        </div>
-      )}
-      {target === "vwapProfile" && (
-        <div className="grid grid-cols-2 gap-2">
-          <Field label="Período" value={draft.vwapProfilePeriod} onChange={(n) => setDraft((d) => ({ ...d, vwapProfilePeriod: n }))} />
-          <Field label="Bins" value={draft.vwapProfileBins} onChange={(n) => setDraft((d) => ({ ...d, vwapProfileBins: n }))} />
         </div>
       )}
       {target === "volume" && (

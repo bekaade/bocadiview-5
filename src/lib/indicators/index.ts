@@ -12,44 +12,6 @@ export interface MACDPoint {
   histogram: number;
 }
 
-export interface VwapProfileBin {
-  low: number;
-  high: number;
-  signedVolume: number;
-  totalVolume: number;
-}
-
-/** VWAP Volume Profile [BigBeluga] approximation for the visible period. */
-export function vwapVolumeProfile(
-  candles: Candle[],
-  period = 250,
-  bins = 50,
-): { vwap: IndicatorPoint[]; profile: VwapProfileBin[]; high: number; low: number } {
-  const source = candles.slice(-Math.min(period, candles.length));
-  if (!source.length) return { vwap: [], profile: [], high: 0, low: 0 };
-
-  let cumulativeVolume = 0;
-  let cumulativePriceVolume = 0;
-  const vwap = source.map((candle) => {
-    const typical = (candle.high + candle.low + candle.close) / 3;
-    cumulativeVolume += candle.volume;
-    cumulativePriceVolume += typical * candle.volume;
-    return { time: candle.time, value: cumulativeVolume ? cumulativePriceVolume / cumulativeVolume : typical };
-  });
-  const high = Math.max(...source.map((candle) => candle.high));
-  const low = Math.min(...source.map((candle) => candle.low));
-  const step = (high - low || 1) / bins;
-  const profile = Array.from({ length: bins }, (_, index) => ({ low: low + index * step, high: low + (index + 1) * step, signedVolume: 0, totalVolume: 0 }));
-  for (let index = 0; index < source.length; index += 1) {
-    const candle = source[index];
-    const value = vwap[index].value > (vwap[index - 2]?.value ?? vwap[index].value) ? candle.volume : -candle.volume;
-    const binIndex = Math.max(0, Math.min(bins - 1, Math.floor(((vwap[index].value - low) / (high - low || 1)) * bins)));
-    profile[binIndex].signedVolume += value;
-    profile[binIndex].totalVolume += candle.volume;
-  }
-  return { vwap, profile, high, low };
-}
-
 /**
  * Simple Moving Average
  */
